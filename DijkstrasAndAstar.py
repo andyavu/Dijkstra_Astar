@@ -112,17 +112,17 @@ def find_neighbors(current_position: Tuple[int,int],terrain :List[List[str]]) ->
 
     return neighbors
 # call to test find_neighbors method
-# print(find_neighbors((3,3), terrain))
+# print(find_neighbors((0,0), terrain))
     
 def is_goal(current_position: Tuple[int,int],terrain :List[List[str]]) -> bool:
-    goal = False
-    # terrain is [y][x]
-    x = current_position[0]
-    y = current_position[1]
-    position = terrain[y][x]
-    if(position == "🌲"):
-      goal = True
-    return goal
+  goal = False
+  # terrain is [y][x]
+  x = current_position[0]
+  y = current_position[1]
+  position = terrain[y][x]
+  if(position == "🌲"):
+    goal = True
+  return goal
 # call to test is_goal method
 # print(is_goal((11,9), terrain))
 
@@ -172,6 +172,43 @@ class PriorityQueue:
     def get(self):
         return heapq.heappop(self.elements)[1]
     
+    # add on
+    def pop(self):
+      print(self.elements)
+      heapq.heappop(self.elements)
+      print(self.elements)
+    # added on
+    def contains(self, item):
+        for i in self.elements:
+            if item in i:
+                return True
+        return False
+    # added on
+    def size(self):
+        return len(self.elements)
+    # added on
+    def greater(self, item, priority):
+        for i in self.elements:
+            if item == i[1]:
+                if priority > i[0]:
+                    return True
+        return False
+    # added on
+    def remove(self, item):
+        for i in self.elements:
+            if i[1] == item:
+                self.elements.remove(i)
+                return
+    # added on
+    def printElements(self):
+        print(self.elements)
+    # added on
+    def returnPath(self):
+        path = []
+        for i in self.elements:
+            path.append(i[1])
+        return path
+    
 def pretty_print_path(path : List[Tuple[int,int]], terrain :List[List[str]]):
         
     emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋']
@@ -206,18 +243,84 @@ You should verify a few things
 
 def dijkstras(initial_position : Tuple[int,int], world : List[List[str]],get_neighbors , is_goal) -> List[Tuple[int,int]]:
     result = []
+    # contains costs to reach position
+    costs = {
+        initial_position: 0
+    }
+    # contains how to get to the node
+    previous = {
+        initial_position: None
+    }
     # instantiating the priority queue
+    # pq will store the possible visits
     pq = PriorityQueue() 
-    print(pq.empty())
-    
-    return result
+
+    # initialize starting position
+    pq.put(initial_position,0)
+    result.append(initial_position)
+
+    while(not pq.empty()):
+      # to visit is next thing from priority queue
+      to_visit = pq.get()
+      if is_goal(to_visit, world):
+        return result
+
+      for neighbor in get_neighbors(to_visit, world):
+        # potential cost is cost to visit current node + cost to visit neighbor
+        potential_cost = costs[to_visit] + neighbor[1]
+        if neighbor[0] in costs and costs[neighbor[0]] <= potential_cost:
+          continue
+        costs[neighbor[0]] = potential_cost
+        previous[neighbor[0]] = to_visit
+        pq.put(neighbor[0], potential_cost)
+        result.append(neighbor[0])
+
+    # return answer path
+    return []
+    # return result
+
 
 def a_star(initial_position,world,get_neighbors,is_goal,heuristic):
-    open_list = []
+    path = []
+    
+    open_list = PriorityQueue()
     closed_list = []
+    
+    g = 0
+    h = heuristic(initial_position, world)
+    f = g + h
+    
+    open_list.put(initial_position, f)
+    path.append(initial_position)
+    
+    while not open_list.empty():
+        current_node = open_list.get()
+        # print("current:", current_node) # HERE
+        closed_list.append(current_node)
+        
+        if is_goal(current_node, world):
+            return closed_list
+            # return path
+            # return open_list.returnPath()
 
-    
-    
+        neighbors = get_neighbors(current_node, world)
+        # print("neighbors:", neighbors) # HERE
+        for i in neighbors:
+            if (i[0] in closed_list):
+                continue
+            
+            nG = g + i[1]
+            nH = heuristic(i[0], world)
+            nF = nG + nH
+            # print(i[0], nF, "=", nG, "+", nH) # HERE
+
+            if open_list.contains(i[0]):
+                if open_list.greater(i[0], nF):
+                    continue
+
+            open_list.put(i[0], nF)
+            path.append(i[0])
+      
     return []
 
 """Your final output -- after pretty printing your paths should look like:
