@@ -150,6 +150,7 @@ def get_heuristic(position : Tuple[int,int],terrain:List[List[str]]) -> float:
         if (min_distance == 0) or (min_distance > temp):
             min_distance = temp
 
+    # return 0
     return min_distance
 
 """Finally, here is a helper class -- `PriorityQueue` -- and a helper function `pretty_print_path` that takes in the path (a list of position (x,y) tuples) and outputs a pretty string with emoji showing the path through the terrain
@@ -257,70 +258,65 @@ def dijkstras(initial_position : Tuple[int,int], world : List[List[str]],get_nei
 
     # initialize starting position
     pq.put(initial_position,0)
-    result.append(initial_position)
 
     while(not pq.empty()):
       # to visit is next thing from priority queue
       to_visit = pq.get()
       if is_goal(to_visit, world):
+        result.append(to_visit)
+        node = to_visit
+        while (initial_position not in result):
+          result.append(previous.get(node))
+          node = previous.get(node)
+        result.reverse()
         return result
 
       for neighbor in get_neighbors(to_visit, world):
-        # potential cost is cost to visit current node + cost to visit neighbor
+        if neighbor[0] in costs and costs[neighbor[0]] <= potential_cost:
+          continue
+        potential_cost = costs[to_visit] + neighbor[1]
+        costs[neighbor[0]] = potential_cost
+        previous[neighbor[0]] = to_visit
+        pq.put(neighbor[0], potential_cost)
+
+    # return answer path
+    return []
+
+def a_star(initial_position,world,get_neighbors,is_goal,heuristic):
+    path = []
+    
+    pq = PriorityQueue()
+    previous = {
+        initial_position: None
+    }
+    costs = {
+        initial_position: 0
+    }
+    visited = set()
+    
+    pq.put(initial_position, 0)
+
+    while (not pq.empty()):
+      to_visit = pq.get()
+      if is_goal(to_visit, world):
+        path.append(to_visit)
+        node = to_visit
+        while (initial_position not in path):
+          path.append(previous.get(node))
+          node = previous.get(node)
+        path.reverse()
+        return path
+
+      visited.add(to_visit)
+      # print(to_visit)
+      for neighbor in get_neighbors(to_visit, world):
+        # print(neighbor)
         potential_cost = costs[to_visit] + neighbor[1]
         if neighbor[0] in costs and costs[neighbor[0]] <= potential_cost:
           continue
         costs[neighbor[0]] = potential_cost
         previous[neighbor[0]] = to_visit
-        pq.put(neighbor[0], potential_cost)
-        result.append(neighbor[0])
-
-    # return answer path
-    return []
-    # return result
-
-
-def a_star(initial_position,world,get_neighbors,is_goal,heuristic):
-    path = []
-    
-    open_list = PriorityQueue()
-    closed_list = []
-    
-    g = 0
-    h = heuristic(initial_position, world)
-    f = g + h
-    
-    open_list.put(initial_position, f)
-    path.append(initial_position)
-    
-    while not open_list.empty():
-        current_node = open_list.get()
-        # print("current:", current_node) # HERE
-        closed_list.append(current_node)
-        
-        if is_goal(current_node, world):
-            return closed_list
-            # return path
-            # return open_list.returnPath()
-
-        neighbors = get_neighbors(current_node, world)
-        # print("neighbors:", neighbors) # HERE
-        for i in neighbors:
-            if (i[0] in closed_list):
-                continue
-            
-            nG = g + i[1]
-            nH = heuristic(i[0], world)
-            nF = nG + nH
-            # print(i[0], nF, "=", nG, "+", nH) # HERE
-
-            if open_list.contains(i[0]):
-                if open_list.greater(i[0], nF):
-                    continue
-
-            open_list.put(i[0], nF)
-            path.append(i[0])
-      
+        pq.put(neighbor[0], potential_cost + heuristic(neighbor[0], world))
     return []
 
 """Your final output -- after pretty printing your paths should look like:
@@ -360,3 +356,7 @@ print(pretty_print_path(a_star_path, terrain))
 * Modify the terrain to have a new terrain type with a different cost (2 pts)
 """
 
+# New terrain type '☠️' = 10
+# costs 10 to step on a burial ground
+map = [['🌿', '☠️', '☠️', '🌿', '☠️', '🌼', '🌿', '🌼', '🌼', '🌿', '☠️', '🌿'], ['🌿', '🌿', '🌿', '🌿', '☠️', '🌼', '🌿', '🌼', '🌼', '🌿', '🌿', '🌿'], ['☠️', '☠️', '☠️', '🌿', '☠️', '🌿', '🌼', '☠️', '🌿', '🌿', '🌿', '🌿'], ['🌿', '🌿', '🌿', '🔥', '🔥', '🔥', '🔥', '🔥', '🌉', '🔥', '🔥', '🔥'], ['☠️', '🔥', '🔥', '☠️', '🔥', '🔥', '🔥', '🔥', '🌉', '🔥', '☠️', '🔥'], ['☠️', '☠️', '☠️', '🔥', '🔥', '🔥', '🔥', '🔥', '🌉', '🔥', '☠️', '☠️'], ['☠️', '🔥', '🔥', '🔥', '🔥', '🔥', '🔥', '🔥', '🌉', '🔥', '☠️', '🔥'], ['🔥', '🔥', '🔥', '🔥', '🔥', '☠️', '☠️', '☠️', '🔥', '🌉', '🔥', '🔥'], ['🔥', '🔥', '🔥', '☠️', '🔥', '🔥', '🔥', '🔥', '🌉', '🔥', '🔥', '🔥'], ['🌿', '🌿', '🌿', '🌲', '🌿', '🌿', '🌿', '🌿', '🌿', '🌼', '🌲', '🌲']]
+print('\n'.join([''.join([c for c in row]) for row in map]))
